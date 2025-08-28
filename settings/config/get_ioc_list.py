@@ -32,14 +32,17 @@ def get_ioc_addrs(
     if dns_names:
         # if we want DNS names, we need to get the service names
         ret = v1.list_namespaced_service(ioc_namespace)
-        for pod in ret.items:
-            if "is_ioc" in pod.metadata.labels:
+        for service in ret.items:
+            if (
+                service.metadata.labels is not None
+                and "is_ioc" in service.metadata.labels
+            ):
                 # use the service name as the DNS name
-                addrs.add(pod.metadata.name)
+                addrs.add(service.metadata.name)
     else:
         ret = v1.list_namespaced_pod(ioc_namespace)
         for pod in ret.items:
-            if "is_ioc" in pod.metadata.labels:
+            if pod.metadata.labels is not None and "is_ioc" in pod.metadata.labels:
                 addrs.add(pod.status.pod_ip)
     return addrs
 

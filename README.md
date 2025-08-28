@@ -68,4 +68,6 @@ All the startup scripts and configuration files can be overriden as follows:
 - Copy `gateways/settings/configmap.yaml` from this repo to `ixx-services/services/ixx-gateway/templates/configmap.yaml` (creating the templates directory)
 - push the changes to your tracked branch
 - delete the gateway pod in argoCD so it restarts with the new configuration
+- add this field to your values.yaml
+  - overrideConfig: true
 - now you can edit the files in `ixx-services/services/ixx-gateway/config` to suit your needs and push the changes to your tracked branch.
