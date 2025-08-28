@@ -96,6 +96,10 @@ spec:
       {{- if .Values.nodeName }}
       nodeName: {{ .Values.nodeName }}
       {{- end }}
-      hostNetwork: {{ .Values.hostNetwork | default "false" }}
+      {{ if .Values.hostNetwork | default "false" }}
+      hostNetwork: true
+      ClusterFirstWithHostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNetwork
+      {{- end }}
       restartPolicy: Always
       terminationGracePeriodSeconds: 1
