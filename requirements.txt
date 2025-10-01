@@ -1,5 +1,6 @@
 # python bindings for pvxs plus pvgw
-p4p
+# TODO pinned to avoid pvagw name resolution issue in 4.2.1
+p4p==4.2.0
 # kubernetes python client
 kubernetes
 # kubernetes fails with more recent urllib3 versions due to cert verification issues
