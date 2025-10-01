@@ -54,14 +54,11 @@ spec:
             - name: PVA_DEBUG
               value: {{ .Values.pvaDebug | quote }}
           image: {{ .Values.image }}
-          imagePullPolicy: Always
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          {{- with .Values.resources }}
           resources:
-            limits:
-              cpu: 800m
-              memory: 1500Mi
-            requests:
-              cpu: 200m
-              memory: 500Mi
+            {{-  toYaml . | nindent 12 }}
+          {{- end }}
           stdin: true
           tty: true
           {{- if .Values.overrideConfig }}
@@ -77,14 +74,11 @@ spec:
            - "/config/start-pva.sh"
           env: *env_gateways
           image: {{ .Values.image }}
-          imagePullPolicy: Always
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          {{- with .Values.resources }}
           resources:
-            limits:
-              cpu: 800m
-              memory: 1500Mi
-            requests:
-              cpu: 200m
-              memory: 400Mi
+            {{-  toYaml . | nindent 12 }}
+          {{- end }}
           stdin: true
           tty: true
           {{- if .Values.overrideConfig }}
