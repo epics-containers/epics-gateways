@@ -27,7 +27,7 @@ RUN apt update && \
 COPY settings/config /config
 
 ##### runtime stage ##########################################################
-FROM ghcr.io/epics-containers/epics-base-runtime:7.0.8ec2 as runtime
+FROM ghcr.io/epics-containers/epics-base-runtime:7.0.8ec2 AS runtime
 
 COPY --from=developer /venv /venv
 COPY --from=developer /epics/ca-gateway /epics/ca-gateway
