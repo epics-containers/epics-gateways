@@ -77,14 +77,11 @@ spec:
            - "/config/start-pva.sh"
           env: *env_gateways
           image: {{ .Values.image }}
-          imagePullPolicy: Always
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          {{- with .resources }}
           resources:
-            limits:
-              cpu: 800m
-              memory: 1500Mi
-            requests:
-              cpu: 200m
-              memory: 400Mi
+            {{  toYaml . | nindent 12 }}
+          {{- end }}
           stdin: true
           tty: true
           {{- if .Values.overrideConfig }}

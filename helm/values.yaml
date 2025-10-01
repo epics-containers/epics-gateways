@@ -2,6 +2,8 @@
 # - we could edit this in the build workflow
 image: ghcr.io/epics-containers/epics-gateways-runtime:2025.7.4
 
+imagePullPolicy: IfNotPreset
+
 overrideConfig: false
 
 # set the CA and PVA server ports that the gateways will listen on
@@ -30,3 +32,12 @@ pvaDebug: 0
 
 # must be the CIDR services clusterIP (this default is all DLS clusters)
 baseIp: 10.96.0.0/12
+
+# default resources. Override if needed
+resources:
+  limits:
+    cpu: 800m
+    memory: 1500Mi
+  requests:
+    cpu: 200m
+    memory: 400Mi
