@@ -57,14 +57,44 @@ jobs:
         if: ${{ matrix.epics-target == 'linux-x86_64' }}
         run: if [ -f tests/run-tests.sh ]; then tests/run-tests.sh ci_test; fi
 
+      - name: Remove plus from beta tags (because helm needs e.g. 2025.7.1+b1)
+        shell: bash
+        run: |
+          VERSION=${GITHUB_REF_NAME//+}
+          echo Version: $VERSION
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Verify Version
+        run: |
+          echo "Updated Version: $VERSION"
+
+      - name: Developer target metadata
+        id: meta-developer
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}${{ matrix.extension }}-developer
+          tags: |
+            type=raw,value=${{ env.VERSION }}
+
       - name: Push developer image
         if: ${{ github.event_name == 'push' && github.ref_type == 'tag' }}
         uses: docker/build-push-action@v6
         with:
           platforms: ${{ matrix.platform }}
           target: developer
-          tags: ${{ env.TAG }}-developer:${{ github.ref_name }}
+          tags: ${{ steps.meta-developer.outputs.tags }}
+          labels: ${{ steps.meta-developer.outputs.labels }}
           push: true
+
+      - name: Runtime target metadata
+        id: meta-runtime
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}${{ matrix.extension }}-runtime
+          tags: |
+            type=raw,value=${{ env.VERSION }}
 
       - name: Push runtime image
         if: ${{ github.event_name == 'push' && github.ref_type == 'tag' }}
@@ -72,7 +102,8 @@ jobs:
         with:
           platforms: ${{ matrix.platform }}
           target: runtime
-          tags: ${{ env.TAG }}-runtime:${{ github.ref_name }}
+          tags: ${{ steps.meta-runtime.outputs.tags }}
+          labels: ${{ steps.meta-runtime.outputs.labels }}
           push: true
 
   release:

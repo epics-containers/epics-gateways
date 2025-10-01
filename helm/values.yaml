@@ -1,4 +1,6 @@
-image: ghcr.io/epics-containers/gateways-developer:2025.7.2
+# TODO this should always track the latest version of the gateways-developer image
+# - we could edit this in the build workflow
+image: ghcr.io/epics-containers/epics-gateways-runtime:2025.7.4
 
 overrideConfig: false
 
@@ -26,5 +28,5 @@ caAddrList:
 caDebug: 0
 pvaDebug: 0
 
-# must be the CIDR services clusterIP (default is all DLS clusters)
+# must be the CIDR services clusterIP (this default is all DLS clusters)
 baseIp: 10.96.0.0/12

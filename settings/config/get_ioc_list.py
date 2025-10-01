@@ -9,6 +9,12 @@ import argparse
 from kubernetes import client, config
 
 
+def is_ioc(resource) -> bool:
+    return resource.metadata.labels is not None and (
+        "is_ioc" in resource.metadata.labels or "ioc" in resource.metadata.labels
+    )
+
+
 def get_ioc_addrs(
     v1: client.CoreV1Api, namespace: str | None = None, dns_names: bool = False
 ) -> set:
@@ -32,14 +38,14 @@ def get_ioc_addrs(
     if dns_names:
         # if we want DNS names, we need to get the service names
         ret = v1.list_namespaced_service(ioc_namespace)
-        for pod in ret.items:
-            if "is_ioc" in pod.metadata.labels:
+        for service in ret.items:
+            if is_ioc(service):
                 # use the service name as the DNS name
-                addrs.add(pod.metadata.name)
+                addrs.add(service.metadata.name)
     else:
         ret = v1.list_namespaced_pod(ioc_namespace)
         for pod in ret.items:
-            if "is_ioc" in pod.metadata.labels:
+            if is_ioc(pod):
                 addrs.add(pod.status.pod_ip)
     return addrs
 

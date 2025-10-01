@@ -1,9 +1,6 @@
-
-
-# don't use numpy 2.0 yet, pin to latest 1.x version
-numpy==1.26.4
-p4p==4.1.12
-nose2==0.15.1
-scapy
+# python bindings for pvxs plus pvgw
+p4p
+# kubernetes python client
 kubernetes
+# kubernetes fails with more recent urllib3 versions due to cert verification issues
 urllib3<2.4.0
