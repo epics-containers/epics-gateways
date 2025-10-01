@@ -1,5 +1,5 @@
 
-ARG BASE=7.0.9ec4b2
+ARG BASE=7.0.9ec4
 
 ###### developer stage #######################################################
 FROM ghcr.io/epics-containers/epics-base-developer:${BASE} AS developer
