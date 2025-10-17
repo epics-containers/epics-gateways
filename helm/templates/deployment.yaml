@@ -93,7 +93,7 @@ spec:
       {{ if .Values.hostNetwork }}
       hostNetwork: true
       ClusterFirstWithHostNetwork: true
-      dnsPolicy: ClusterFirstWithHostNetwork
+      dnsPolicy: ClusterFirstWithHostNet
       {{- end }}
       restartPolicy: Always
       terminationGracePeriodSeconds: 1
