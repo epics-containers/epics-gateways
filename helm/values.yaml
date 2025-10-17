@@ -1,8 +1,7 @@
-# TODO this should always track the latest version of the gateways-developer image
-# - we could edit this in the build workflow
-image: ghcr.io/epics-containers/epics-gateways-runtime:2025.7.4
+# TODO this should be updated to track the helm chart version automatically
+image: ghcr.io/epics-containers/epics-gateways-runtime:2025.10.1
 
-imagePullPolicy: IfNotPreset
+imagePullPolicy: IfNotPresent
 
 overrideConfig: false
 
