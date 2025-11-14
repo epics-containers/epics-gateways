@@ -9,6 +9,9 @@ overrideConfig: false
 caServerPort: 9064
 pvaServerPort: 9075
 
+# pick a loadBalancerIP
+loadBalancerIP: ""
+
 # set the node name to use for the gateway only for use where you need to run
 # in a specific subnet. e.g. DLS training rigs.
 # DONT run on the SAME node as the IOCs to avoid localhost dual binding issues
