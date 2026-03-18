@@ -28,6 +28,18 @@ spec:
           configMap:
             name: {{ .Release.Name }}-config
       {{- end }}
+      {{- with .Values.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: {{ .Release.Name }}-ca-gateway
           command:
@@ -53,7 +65,7 @@ spec:
               value: {{ .Values.caDebug | quote }}
             - name: PVA_DEBUG
               value: {{ .Values.pvaDebug | quote }}
-          image: {{ .Values.image }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           {{- with .Values.resources }}
           resources:
@@ -73,7 +85,7 @@ spec:
           args:
            - "/config/start-pva.sh"
           env: *env_gateways
-          image: {{ .Values.image }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           {{- with .Values.resources }}
           resources:
