@@ -4,7 +4,8 @@ THIS="$(dirname "$(readlink -f "$0")")"
 source "${THIS}/environment.sh"
 
 if [[  ${EPICS_PVA_AUTO_ADDR_LIST} = "YES" ]]; then
-  BROADCAST=\"bcastport\":5076,
+  # broadcast address is +1 of the server port, defaulting to 9076 (default helm values)
+  BROADCAST=\"bcastport\":$(($PVA_SERVER_PORT + 1)),
 else
   BROADCAST=""
 fi
