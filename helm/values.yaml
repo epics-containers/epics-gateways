@@ -43,6 +43,9 @@ tolerations: []
 # override pod affinity if needed
 affinity: {}
 
+# schedule the gateway onto matching nodes, e.g. kubernetes.io/arch: amd64
+nodeSelector: {}
+
 # default resources. Override if needed
 resources:
   limits:
