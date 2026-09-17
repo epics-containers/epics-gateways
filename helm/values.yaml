@@ -34,9 +34,6 @@ caAddrList:
 caDebug: 0
 pvaDebug: 0
 
-# must be the CIDR services clusterIP (this default is all DLS clusters)
-baseIp: 10.96.0.0/12
-
 # override the pod security context if needed
 securityContext: {}
 
