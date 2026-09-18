@@ -22,6 +22,12 @@ nodeName:
 # set the maximum size of arrays that can be sent over CA
 caMaxArrayBytes: "3000000"
 
+# the longest gap, in seconds, between the CA gateway's searches for a PV it
+# cannot find. After a disconnect the gap grows from a fraction of a second to
+# this cap, so it bounds how long an IOC that was down a long time takes to
+# reappear. libca's default is 300; 60 is the lowest it accepts
+caMaxSearchPeriod: "60"
+
 # set to false to run the gateway in clusterIP mode
 hostNetwork: true
 
@@ -30,9 +36,10 @@ hostNetwork: true
 pvaAddrList:
 caAddrList:
 
-# restart both gateways whenever an IOC in the namespace becomes Ready after
-# the gateways started. Avoids gateways missing IOCs that started after them
-# or that were restarted. Adds an ioc-watcher sidecar to the gateway pod.
+# restart both gateways whenever an IOC service is created in the namespace
+# after the gateways started, which they would otherwise never search. A
+# restarted IOC keeps its service and needs no restart. Adds an ioc-watcher
+# sidecar to the gateway pod.
 # Only applies when hostNetwork is false: with hostNetwork the gateways find
 # IOCs by broadcast and do not need restarting.
 restartOnNewIocs: false

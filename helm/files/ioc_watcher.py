@@ -1,17 +1,23 @@
 #!/usr/bin/env python
 
 """
-Runs as a sidecar in the gateway pod. Deletes the pod whenever an IOC in the
-namespace becomes Ready after the gateways started.
+Runs as a sidecar in the gateway pod. Deletes the pod whenever an IOC service
+is created in the namespace after the gateways started.
 
 In cluster network mode the gateways find IOCs by the DNS names of the IOC
-services that exist when they start. This catches IOCs that start after the
-gateways (e.g. the whole namespace coming up at once) and IOCs that are
-restarted. The StatefulSet recreates the pod, restarting both gateways.
+services that exist when they start, so they never search for a service
+created later, e.g. when the whole namespace comes up at once. The
+StatefulSet recreates the pod, restarting both gateways, which then list it.
 
-The check is stateless: each poll compares the newest IOC Ready time with the
-start time of the gateway containers, so restarts of this watcher do not lose
-or repeat any work.
+A restarted IOC needs no gateway restart: its service keeps its cluster IP,
+and the gateways' CA and PVA clients reconnect to the new pod by themselves.
+Restarting the gateways would drop every client connection, e.g. in the middle
+of a scan. A service that is deleted and created again gets a new cluster IP,
+and its new creation time causes a restart.
+
+The check is stateless: each poll compares the newest IOC service creation
+time with the start time of the gateway containers, so restarts of this
+watcher do not lose or repeat any work.
 """
 
 import os
@@ -26,8 +32,8 @@ POD_NAME = os.environ["POD_NAME"]
 WATCHER_CONTAINER = "ioc-watcher"
 # seconds between polls of the Kubernetes API
 POLL_SECONDS = int(os.environ.get("POLL_SECONDS", "10"))
-# seconds with no newly Ready IOCs before restarting, so that a batch of IOCs
-# starting together causes a single gateway restart
+# seconds with no new IOC services before restarting, so that a batch of IOCs
+# created together causes a single gateway restart
 SETTLE_SECONDS = int(os.environ.get("SETTLE_SECONDS", "10"))
 
 NS_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
@@ -37,19 +43,11 @@ def log(msg: str):
     print(f"{datetime.now(timezone.utc).isoformat(timespec='seconds')} {msg}", flush=True)
 
 
-def is_ioc(pod) -> bool:
-    labels = pod.metadata.labels
+def is_ioc(resource) -> bool:
+    """The same test as settings/config/get_ioc_list.py, which lists the
+    services that the gateways search"""
+    labels = resource.metadata.labels
     return labels is not None and ("is_ioc" in labels or "ioc" in labels)
-
-
-def ready_since(pod) -> datetime | None:
-    """Return the time a pod became Ready, or None if it is not Ready"""
-    if pod.metadata.deletion_timestamp is not None:
-        return None
-    for condition in pod.status.conditions or []:
-        if condition.type == "Ready" and condition.status == "True":
-            return condition.last_transition_time
-    return None
 
 
 def started_at(pod) -> datetime | None:
@@ -72,11 +70,11 @@ def check(v1: client.CoreV1Api, namespace: str):
         return
 
     newer = {}
-    for pod in v1.list_namespaced_pod(namespace).items:
-        if is_ioc(pod):
-            ready = ready_since(pod)
-            if ready is not None and ready > gateway_started:
-                newer[pod.metadata.name] = ready
+    for service in v1.list_namespaced_service(namespace).items:
+        if is_ioc(service) and service.metadata.deletion_timestamp is None:
+            created = service.metadata.creation_timestamp
+            if created > gateway_started:
+                newer[service.metadata.name] = created
     if not newer:
         return
 
@@ -85,7 +83,7 @@ def check(v1: client.CoreV1Api, namespace: str):
         return
 
     log(
-        f"IOCs ready since gateways started at {gateway_started.isoformat()}: "
+        f"IOC services created since gateways started at {gateway_started.isoformat()}: "
         f"{' '.join(sorted(newer))}"
     )
     log(f"restarting gateway pod {POD_NAME}")

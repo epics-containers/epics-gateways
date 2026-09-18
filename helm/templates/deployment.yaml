@@ -67,6 +67,8 @@ spec:
           env: &env_gateways
             - name: EPICS_CA_MAX_ARRAY_BYTES
               value: {{ .Values.caMaxArrayBytes | quote }}
+            - name: EPICS_CA_MAX_SEARCH_PERIOD
+              value: {{ .Values.caMaxSearchPeriod | quote }}
             - name: EPICS_CA_AUTO_ADDR_LIST
               value: {{ ternary "YES" "NO" .Values.hostNetwork | quote}}
             - name: EPICS_PVA_AUTO_ADDR_LIST
