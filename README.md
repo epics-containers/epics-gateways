@@ -46,6 +46,11 @@ When run with hostNetwork=true, the gateways use AUTO_ADDR_LIST broadcasts on th
 
 When run with hostNetwork=false, the gateways use the cluster DNS names of the IOCs that were running when the gateways pod started - you are required to restart the pod if new IOCs are deployed.
 
+# restartOnNewIocs
+When hostNetwork=false, set `restartOnNewIocs: true` to restart both gateways automatically whenever an IOC in the namespace becomes Ready after the gateways started. This covers IOCs that start after the gateways and IOCs that are restarted. The setting has no effect when hostNetwork=true, because the gateways find IOCs by broadcast.
+
+It adds an `ioc-watcher` sidecar to the gateway pod that polls the namespace every 10 seconds. After the last new IOC has been Ready for 10 seconds it deletes the gateway pod, and the StatefulSet recreates it. It uses the `default-full-access-mounted` service account and needs get, list and delete permission on pods.
+
 # Configuration
 
 The supplied helm chart can deploy the gateways into a K8S cluster.

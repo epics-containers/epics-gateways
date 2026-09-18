@@ -1,0 +1,12 @@
+{{- if and .Values.restartOnNewIocs (not .Values.hostNetwork) }}
+# script for the ioc-watcher sidecar in the gateway pod
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-ioc-watcher
+  labels:
+    app: {{ .Release.Name }}
+data:
+  ioc_watcher.py: |
+{{ .Files.Get "files/ioc_watcher.py" | indent 4 }}
+{{- end }}
