@@ -36,9 +36,10 @@ hostNetwork: true
 pvaAddrList:
 caAddrList:
 
-# restart both gateways whenever an IOC in the namespace becomes Ready after
-# the gateways started. Avoids gateways missing IOCs that started after them
-# or that were restarted. Adds an ioc-watcher sidecar to the gateway pod.
+# restart both gateways whenever an IOC service is created in the namespace
+# after the gateways started, which they would otherwise never search. A
+# restarted IOC keeps its service and needs no restart. Adds an ioc-watcher
+# sidecar to the gateway pod.
 # Only applies when hostNetwork is false: with hostNetwork the gateways find
 # IOCs by broadcast and do not need restarting.
 restartOnNewIocs: false

@@ -47,9 +47,11 @@ When run with hostNetwork=true, the gateways use AUTO_ADDR_LIST broadcasts on th
 When run with hostNetwork=false, the gateways use the cluster DNS names of the IOCs that were running when the gateways pod started - you are required to restart the pod if new IOCs are deployed.
 
 # restartOnNewIocs
-When hostNetwork=false, set `restartOnNewIocs: true` to restart both gateways automatically whenever an IOC in the namespace becomes Ready after the gateways started. This covers IOCs that start after the gateways and IOCs that are restarted. The setting has no effect when hostNetwork=true, because the gateways find IOCs by broadcast.
+When hostNetwork=false, set `restartOnNewIocs: true` to restart both gateways automatically whenever an IOC service is created in the namespace after the gateways started. The gateways search the IOC services that exist when they start, so without a restart they never find an IOC added later, e.g. when the whole namespace comes up at once. The setting has no effect when hostNetwork=true, because the gateways find IOCs by broadcast.
 
-It adds an `ioc-watcher` sidecar to the gateway pod that polls the namespace every 10 seconds. After the last new IOC has been Ready for 10 seconds it deletes the gateway pod, and the StatefulSet recreates it. It uses the `default-full-access-mounted` service account and needs get, list and delete permission on pods.
+A restarted IOC does not restart the gateways. Its service keeps its cluster IP, and the gateways reconnect to the new pod by themselves, typically within 20 seconds. A gateway restart would drop every client connection, e.g. in the middle of a scan. `caMaxSearchPeriod` (default 60 seconds) bounds how long the CA gateway takes to find an IOC that was down for a long time.
+
+It adds an `ioc-watcher` sidecar to the gateway pod that polls the namespace every 10 seconds. When the newest new IOC service is 10 seconds old it deletes the gateway pod, and the StatefulSet recreates it. It uses the `default-full-access-mounted` service account and needs get and delete permission on pods and list permission on services.
 
 # Configuration
 
