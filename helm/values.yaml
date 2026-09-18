@@ -32,7 +32,9 @@ caAddrList:
 
 # restart both gateways whenever an IOC in the namespace becomes Ready after
 # the gateways started. Avoids gateways missing IOCs that started after them
-# or that were restarted. Runs a small watcher Deployment alongside the gateways.
+# or that were restarted. Adds an ioc-watcher sidecar to the gateway pod.
+# Only applies when hostNetwork is false: with hostNetwork the gateways find
+# IOCs by broadcast and do not need restarting.
 restartOnNewIocs: false
 
 # set these to 1 to enable debugging

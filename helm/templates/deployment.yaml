@@ -1,3 +1,5 @@
+{{- /* the ioc-watcher is only needed when IOCs are found by DNS name */}}
+{{- $iocWatcher := and .Values.restartOnNewIocs (not .Values.hostNetwork) }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -14,6 +16,11 @@ spec:
       creationTimestamp: null
       labels:
         app: {{ .Release.Name }}
+      {{- if $iocWatcher }}
+      annotations:
+        # restart the pod when the ioc-watcher script changes
+        checksum/ioc-watcher: {{ .Files.Get "files/ioc_watcher.py" | sha256sum }}
+      {{- end }}
     spec:
       {{- with .Values.nodeName }}
       nodeName: {{ . }}
@@ -22,11 +29,18 @@ spec:
       serviceAccountName: default-full-access-mounted
       # if overrideConfig is set, mount the config map over the default
       # config files supplied inside the container image
-      {{- if .Values.overrideConfig }}
+      {{- if or .Values.overrideConfig $iocWatcher }}
       volumes:
+        {{- if .Values.overrideConfig }}
         - name: config-volume
           configMap:
             name: {{ .Release.Name }}-config
+        {{- end }}
+        {{- if $iocWatcher }}
+        - name: ioc-watcher
+          configMap:
+            name: {{ .Release.Name }}-ioc-watcher
+        {{- end }}
       {{- end }}
       {{- with .Values.securityContext }}
       securityContext:
@@ -102,6 +116,33 @@ spec:
           - name: config-volume
             mountPath: /config
           {{- end }}
+
+        {{- if $iocWatcher }}
+
+        # restarts this pod when an IOC becomes Ready after the gateways started
+        - name: ioc-watcher
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          command:
+            - python3
+          args:
+            - "/ioc-watcher/ioc_watcher.py"
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          resources:
+            limits:
+              cpu: 100m
+              memory: 128Mi
+            requests:
+              cpu: 10m
+              memory: 64Mi
+          volumeMounts:
+            - name: ioc-watcher
+              mountPath: /ioc-watcher
+        {{- end }}
 
       {{- if .Values.nodeName }}
       nodeName: {{ .Values.nodeName }}
