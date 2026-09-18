@@ -1,0 +1,74 @@
+{{- if .Values.restartOnNewIocs }}
+# Watches for IOCs becoming Ready after the gateways started and restarts the
+# gateway pod when that happens. This runs as a separate pod rather than a
+# sidecar because a hostNetwork pod cannot reach the Kubernetes API.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-ioc-watcher
+  labels:
+    app: {{ .Release.Name }}-ioc-watcher
+data:
+  ioc_watcher.py: |
+{{ .Files.Get "files/ioc_watcher.py" | indent 4 }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-ioc-watcher
+  labels:
+    app: {{ .Release.Name }}-ioc-watcher
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-ioc-watcher
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-ioc-watcher
+      annotations:
+        # roll the watcher when its script changes
+        checksum/script: {{ .Files.Get "files/ioc_watcher.py" | sha256sum }}
+    spec:
+      # needs list and delete permission on pods in the namespace
+      serviceAccountName: default-full-access-mounted
+      {{- with .Values.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: ioc-watcher
+          configMap:
+            name: {{ .Release.Name }}-ioc-watcher
+      containers:
+        - name: ioc-watcher
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          command:
+            - python3
+          args:
+            - "/ioc-watcher/ioc_watcher.py"
+          env:
+            - name: GATEWAY_SELECTOR
+              value: "app={{ .Release.Name }}"
+          resources:
+            limits:
+              cpu: 100m
+              memory: 128Mi
+            requests:
+              cpu: 10m
+              memory: 64Mi
+          volumeMounts:
+            - name: ioc-watcher
+              mountPath: /ioc-watcher
+      terminationGracePeriodSeconds: 1
+{{- end }}
