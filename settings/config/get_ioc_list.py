@@ -5,8 +5,10 @@ Prints a list of cluster IPs or DNS names of IOCs running in the current namespa
 """
 
 import argparse
+import ssl
 
 from kubernetes import client, config
+from urllib3.util.ssl_ import create_urllib3_context
 
 
 def is_ioc(resource) -> bool:
@@ -50,6 +52,23 @@ def get_ioc_addrs(
     return addrs
 
 
+def core_v1_api() -> client.CoreV1Api:
+    """Make a Core API client that accepts cluster CAs strict X.509 rejects.
+
+    Python 3.13 and urllib3 2.4+ verify with ``VERIFY_X509_STRICT``, which
+    rejects cluster root CAs that lack the Authority Key Identifier extension
+    (kubectl accepts them). Only that flag is cleared: the certificate chain
+    and host name are still verified.
+    """
+    api_client = client.ApiClient()
+    if api_client.configuration.verify_ssl:
+        context = create_urllib3_context()
+        context.verify_flags &= ~ssl.VERIFY_X509_STRICT
+        pool_kw = api_client.rest_client.pool_manager.connection_pool_kw
+        pool_kw["ssl_context"] = context
+    return client.CoreV1Api(api_client)
+
+
 def main():
     args = parse_args()
 
@@ -60,7 +79,7 @@ def main():
     except config.ConfigException:
         config.load_kube_config()
         in_cluster = False
-    v1 = client.CoreV1Api()
+    v1 = core_v1_api()
 
     if not in_cluster and args.namespace is None:
         raise ValueError("--namespace must be specified when not running in-cluster")
