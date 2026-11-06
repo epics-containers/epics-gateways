@@ -21,10 +21,12 @@ watcher do not lose or repeat any work.
 """
 
 import os
+import ssl
 import time
 from datetime import datetime, timezone
 
 from kubernetes import client, config
+from urllib3.util.ssl_ import create_urllib3_context
 
 # the gateway pod this sidecar runs in
 POD_NAME = os.environ["POD_NAME"]
@@ -90,9 +92,26 @@ def check(v1: client.CoreV1Api, namespace: str):
     v1.delete_namespaced_pod(POD_NAME, namespace)
 
 
+def core_v1_api() -> client.CoreV1Api:
+    """Make a Core API client that accepts cluster CAs strict X.509 rejects.
+
+    Python 3.13 and urllib3 2.4+ verify with ``VERIFY_X509_STRICT``, which
+    rejects cluster root CAs that lack the Authority Key Identifier extension
+    (kubectl accepts them). Only that flag is cleared: the certificate chain
+    and host name are still verified.
+    """
+    api_client = client.ApiClient()
+    if api_client.configuration.verify_ssl:
+        context = create_urllib3_context()
+        context.verify_flags &= ~ssl.VERIFY_X509_STRICT
+        pool_kw = api_client.rest_client.pool_manager.connection_pool_kw
+        pool_kw["ssl_context"] = context
+    return client.CoreV1Api(api_client)
+
+
 def main():
     config.load_incluster_config()
-    v1 = client.CoreV1Api()
+    v1 = core_v1_api()
     with open(NS_PATH) as f:
         namespace = f.read().strip()
 

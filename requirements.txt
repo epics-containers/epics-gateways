@@ -3,5 +3,5 @@
 p4p>=4.2.0
 # kubernetes python client
 kubernetes
-# kubernetes fails with more recent urllib3 versions due to cert verification issues
-urllib3<2.4.0
+# urllib3 security fixes (GHSA-pq67-6m6q-mj2v)
+urllib3>=2.5.0
